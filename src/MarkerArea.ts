@@ -11,6 +11,7 @@ import { Settings } from './core/Settings';
 import { Style } from './core/Style';
 import { LineMarker } from './markers/line-marker/LineMarker';
 import { TextMarker } from './markers/text-marker/TextMarker';
+import { AITextMarker } from './markers/xxt-text-marker/AiTextMarker';
 import { FreehandMarker } from './markers/freehand-marker/FreehandMarker';
 import { ArrowMarker } from './markers/arrow-marker/ArrowMarker';
 import { CoverMarker } from './markers/cover-marker/CoverMarker';
@@ -87,8 +88,6 @@ export class MarkerArea {
   private editingTarget: HTMLImageElement;
   private overlayContainer: HTMLDivElement;
 
-  private touchPoints = 0;
-
   private logoUI: HTMLElement;
 
   /**
@@ -116,6 +115,7 @@ export class MarkerArea {
       FreehandMarker,
       ArrowMarker,
       TextMarker,
+      AITextMarker,
       EllipseFrameMarker,
       EllipseMarker,
       HighlightMarker,
@@ -138,6 +138,7 @@ export class MarkerArea {
       FreehandMarker,
       ArrowMarker,
       TextMarker,
+      AITextMarker,
       EllipseMarker,
       HighlightMarker,
       CalloutMarker
@@ -155,7 +156,8 @@ export class MarkerArea {
       FreehandMarker,
       ArrowMarker,
       TextMarker,
-      HighlightMarker
+      HighlightMarker,
+      AITextMarker,
     ];
   }
 
@@ -309,7 +311,6 @@ export class MarkerArea {
     this.removeRenderEventListener = this.removeRenderEventListener.bind(this);
     this.clientToLocalCoordinates = this.clientToLocalCoordinates.bind(this);
     this.onWindowResize = this.onWindowResize.bind(this);
-    this.deleteSelectedMarker = this.deleteSelectedMarker.bind(this);
     this.setWindowHeight = this.setWindowHeight.bind(this);
     this.removeMarker = this.removeMarker.bind(this);
   }
@@ -550,7 +551,9 @@ export class MarkerArea {
 
   private initMarkerCanvas(): void {
     this.markerImageHolder = document.createElement('div');
-    this.markerImageHolder.style.setProperty('touch-action', 'pinch-zoom');
+    // fix for Edge's touch behavior
+    this.markerImageHolder.style.setProperty('touch-action', 'none');
+    this.markerImageHolder.style.setProperty('-ms-touch-action', 'none');
 
     this.markerImage = document.createElementNS(
       'http://www.w3.org/2000/svg',
@@ -606,18 +609,7 @@ export class MarkerArea {
     this.markerImage.addEventListener('dblclick', this.onDblClick);
     window.addEventListener('pointermove', this.onPointerMove);
     window.addEventListener('pointerup', this.onPointerUp);
-    window.addEventListener('pointercancel', () => {
-      if (this.touchPoints > 0) {
-        this.touchPoints--;
-      }
-    });
-    window.addEventListener('pointerout', () => {
-      if (this.touchPoints > 0) {
-        this.touchPoints--;
-      }
-    });
-    window.addEventListener('pointerleave', this.onPointerUp);
-    window.addEventListener('resize', this.onWindowResize)
+    window.addEventListener('resize', this.onWindowResize);
     window.addEventListener('keyup', this.onKeyUp);
   }
 
@@ -736,7 +728,7 @@ export class MarkerArea {
 
     this.toolbar = new Toolbar(this.uiDiv, this.settings.displayMode, this._availableMarkerTypes, this.uiStyleSettings);
     this.toolbar.addButtonClickListener(this.toolbarButtonClicked);
-    this.toolbar.show(this.uiStyleSettings.hideToolbar ? 'hidden' : 'visible');
+    this.toolbar.show();
 
     this.contentDiv = document.createElement('div');
     this.contentDiv.style.display = 'flex';
@@ -770,7 +762,7 @@ export class MarkerArea {
     this.editorCanvas.appendChild(this.editingTarget);
 
     this.toolbox = new Toolbox(this.uiDiv, this.settings.displayMode, this.uiStyleSettings);
-    this.toolbox.show(this.uiStyleSettings.hideToolbox ? 'hidden' : 'visible');
+    this.toolbox.show();
   }
 
   private closeUI() {
@@ -811,7 +803,11 @@ export class MarkerArea {
           break;
         }
         case 'delete': {
-          this.deleteSelectedMarker();
+          if (this.currentMarker !== undefined) {
+            this.removeMarker(this.currentMarker);
+            this.setCurrentMarker();
+            this.markerImage.style.cursor = 'default';
+          }
           break;
         }
         case 'close': {
@@ -819,30 +815,14 @@ export class MarkerArea {
           break;
         }
         case 'render': {
-          this.startRenderAndClose();
+          this.renderClicked();
           break;
         }
       }
     }
   }
 
-  /**
-   * Removes currently selected marker.
-   */
-  public deleteSelectedMarker(): void {
-    if (this.currentMarker !== undefined) {
-      this.currentMarker.dispose();
-      this.markerImage.removeChild(this.currentMarker.container);
-      this.markers.splice(this.markers.indexOf(this.currentMarker), 1);
-    }
-  }
-
-  /**
-   * Initiates markup rendering.
-   * 
-   * Get results by adding a render event listener via {@linkcode addRenderEventListener}.
-   */
-  public async startRenderAndClose(): Promise<void> {
+  private async renderClicked() {
     const result = await this.render();
     const state = this.getState();
     this.renderEventListeners.forEach((listener) => listener(result, state));
@@ -905,21 +885,7 @@ export class MarkerArea {
     );
   }
 
-  /**
-   * Initiate new marker creation.
-   * 
-   * marker.js switches to marker creation mode for the marker type specified
-   * and users can draw a new marker like they would by pressing a corresponding
-   * toolbar button.
-   * 
-   * This example initiates creation of a `FrameMarker`:
-   * ```typescript
-   * this.markerArea1.createNewMarker(FrameMarker);
-   * ```
-   * 
-   * @param markerType 
-   */
-  public createNewMarker(markerType: typeof MarkerBase): void {
+  private createNewMarker(markerType: typeof MarkerBase) {
     this.setCurrentMarker();
     this.currentMarker = this.addNewMarker(markerType);
     this.currentMarker.onMarkerCreated = this.markerCreated;
@@ -955,29 +921,26 @@ export class MarkerArea {
   }
 
   private onPointerDown(ev: PointerEvent) {
-    this.touchPoints++;
-    if (this.touchPoints === 1 || ev.pointerType !== 'touch') {
-      if (
-        this.currentMarker !== undefined &&
-        (this.currentMarker.state === 'new' ||
-          this.currentMarker.state === 'creating')
-      ) {
+    if (
+      this.currentMarker !== undefined &&
+      (this.currentMarker.state === 'new' ||
+        this.currentMarker.state === 'creating')
+    ) {
+      this.isDragging = true;
+      this.currentMarker.pointerDown(
+        this.clientToLocalCoordinates(ev.clientX, ev.clientY)
+      );
+    } else if (this.mode === 'select') {
+      const hitMarker = this.markers.find((m) => m.ownsTarget(ev.target));
+      if (hitMarker !== undefined) {
+        this.setCurrentMarker(hitMarker);
         this.isDragging = true;
         this.currentMarker.pointerDown(
-          this.clientToLocalCoordinates(ev.clientX, ev.clientY)
+          this.clientToLocalCoordinates(ev.clientX, ev.clientY),
+          ev.target
         );
-      } else if (this.mode === 'select') {
-        const hitMarker = this.markers.find((m) => m.ownsTarget(ev.target));
-        if (hitMarker !== undefined) {
-          this.setCurrentMarker(hitMarker);
-          this.isDragging = true;
-          this.currentMarker.pointerDown(
-            this.clientToLocalCoordinates(ev.clientX, ev.clientY),
-            ev.target
-          );
-        } else {
-          this.setCurrentMarker();
-        }
+      } else {
+        this.setCurrentMarker();
       }
     }
   }
@@ -1000,25 +963,18 @@ export class MarkerArea {
   }
 
   private onPointerMove(ev: PointerEvent) {
-    if (this.touchPoints === 1 || ev.pointerType !== 'touch') {
-      if (this.currentMarker !== undefined || this.isDragging) {
-        ev.preventDefault();
-        this.currentMarker.manipulate(
-          this.clientToLocalCoordinates(ev.clientX, ev.clientY)
-        );
-      }
+    if (this.currentMarker !== undefined || this.isDragging) {
+      ev.preventDefault();
+      this.currentMarker.manipulate(
+        this.clientToLocalCoordinates(ev.clientX, ev.clientY)
+      );
     }
-}
+  }
   private onPointerUp(ev: PointerEvent) {
-    if (this.touchPoints > 0) {
-      this.touchPoints--;
-    }
-    if (this.touchPoints === 0) {
-      if (this.isDragging && this.currentMarker !== undefined) {
-        this.currentMarker.pointerUp(
-          this.clientToLocalCoordinates(ev.clientX, ev.clientY)
-        );
-      }
+    if (this.isDragging && this.currentMarker !== undefined) {
+      this.currentMarker.pointerUp(
+        this.clientToLocalCoordinates(ev.clientX, ev.clientY)
+      );
     }
     this.isDragging = false;
   }

@@ -111,13 +111,16 @@ export class CalloutMarker extends TextMarker {
   private createTip() {
     SvgHelper.setAttributes(this.bgRectangle, [
       ['fill', this.bgColor],
+      // ['fill', 'transparent'], // xiaowy
       ['rx', '10px'],
     ]);
 
+    
     this.tip = SvgHelper.createPolygon(this.getTipPoints(), [
       ['fill', this.bgColor],
     ]);
     this.visual.appendChild(this.tip);
+    
   }
 
   /**
@@ -182,8 +185,9 @@ export class CalloutMarker extends TextMarker {
    */
   protected setBgColor(color: string): void {
     SvgHelper.setAttributes(this.bgRectangle, [['fill', color]]);
+    // SvgHelper.setAttributes(this.bgRectangle, [['fill', 'transparent']]);
     SvgHelper.setAttributes(this.tip, [['fill', color]]);
-    this.bgColor = color;
+    // this.bgColor = color;
   }
 
   private getTipPoints(): string {

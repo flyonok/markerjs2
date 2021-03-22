@@ -1,6 +1,6 @@
 {
   "name": "markerjs2",
-  "version": "2.5.0",
+  "version": "2.4.1",
   "description": "JavaScript image annotation",
   "main": "markerjs2.js",
   "module": "markerjs2.esm.js",
@@ -46,7 +46,7 @@
     "rollup-plugin-svgo": "^1.1.0",
     "rollup-plugin-terser": "^7.0.0",
     "tslib": "^2.0.1",
-    "typedoc": "^0.18.0",
+    "typedoc": "^0.20.32",
     "typescript": "^4.0.2"
   },
   "dependencies": {

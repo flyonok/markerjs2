@@ -83,9 +83,8 @@ export class Toolbar {
   /**
    * Creates and displays the toolbar UI.
    */
-  public show(visiblity: string): void {
+  public show(): void {
     this.uiContainer = document.createElement('div');
-    this.uiContainer.style.visibility = visiblity;
     this.uiContainer.className = `${this.toolbarStyleClass.name} ${Style.fadeInAnimationClassName} ${
       this.uiStyleSettings.toolbarStyleColorsClassName ? 
       this.uiStyleSettings.toolbarStyleColorsClassName : this.toolbarStyleColorsClass.name}`;
@@ -240,21 +239,6 @@ export class Toolbar {
     actionButton.addEventListener('click', () => {
       this.actionToolbarButtonClicked(actionButton, value);
     });
-    switch(value) {
-      case 'select':
-        actionButton.style.fill = this.uiStyleSettings.selectButtonColor;
-        break;
-      case 'delete':
-        actionButton.style.fill = this.uiStyleSettings.deleteButtonColor;
-        break;
-      case 'render':
-        actionButton.style.fill = this.uiStyleSettings.okButtonColor;
-        break;
-      case 'close':
-        actionButton.style.fill = this.uiStyleSettings.closeButtonColor;
-        break;
-    }
-
     container.appendChild(actionButton);
     this.buttons.push(actionButton);
   }

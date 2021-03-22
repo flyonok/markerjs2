@@ -45,3 +45,5 @@ export { LineMarkerState } from './markers/line-marker/LineMarkerState';
 export { MeasurementMarker } from './markers/measurement-marker/MeasurementMarker';
 export { TextMarker } from './markers/text-marker/TextMarker';
 export { TextMarkerState } from './markers/text-marker/TextMarkerState';
+export { AITextMarker } from './markers/xxt-text-marker/AiTextMarker';
+export { AITextMarkerState } from './markers/xxt-text-marker/AiTextMarkerState';

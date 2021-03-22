@@ -23,14 +23,6 @@ export interface IStyleSettings {
    */
   toolbarHeight?: number;
   /**
-   * If set to true, the toolbar is hidden.
-   */
-  hideToolbar?: boolean;
-  /**
-   * If set to true, the toolbox is hidden.
-   */
-  hideToolbox?: boolean;
-  /**
    * Background color of the toolbox (property panel) block.
    */
   toolboxBackgroundColor?: string;
@@ -42,22 +34,6 @@ export interface IStyleSettings {
    * Accent color for selected toolbox objects.
    */
   toolboxAccentColor?: string;
-  /**
-   * Custom icon color for the select (pointer) toolbar button
-   */
-  selectButtonColor?: string;
-  /**
-   * Custom icon color for the delete toolbar button
-   */
-  deleteButtonColor?: string;
-  /**
-   * Custom icon color for the OK (render) toolbar button
-   */
-  okButtonColor?: string;
-  /**
-   * Custom icon color for the close (cancel) toolbar button
-   */
-  closeButtonColor?: string;
   /**
    * CSS class name defining the visual style of the toolbar block.
    * 
