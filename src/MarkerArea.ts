@@ -323,13 +323,14 @@ export class MarkerArea {
     this.initOverlay();
     this.attachEvents();
 
-    if (!Activator.isLicensed) {
+    // remove logo!!! xiaowy 2021/03/23
+    // if (!Activator.isLicensed) {
       // NOTE:
       // before removing this call please consider supporting marker.js
       // by visiting https://markerjs.com/ for details
       // thank you!
-      this.addLogo();
-    }
+      // this.addLogo();
+    // }
 
     this._isOpen = true;
   }
