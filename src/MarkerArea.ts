@@ -877,7 +877,16 @@ export class MarkerArea {
 
   private addNewMarker(markerType: typeof MarkerBase): MarkerBase {
     const g = SvgHelper.createGroup();
-    this.markerImage.appendChild(g);
+    // xiaowy 2021/05/12 :这样可以选择后创建的marker了
+    const firstNode = this.markerImage.firstChild;
+    if (firstNode) {
+      this.markerImage.insertBefore(g, firstNode);
+    }
+    else {
+      this.markerImage.appendChild(g);
+    }
+    //end
+    // this.markerImage.appendChild(g);
 
     return new markerType(
       g,

@@ -12,7 +12,8 @@ export class ResizeGrip {
   /**
    * Grip's size (raduis).
    */
-  public readonly GRIP_SIZE = 10;
+  // public readonly GRIP_SIZE = 10;
+  public readonly GRIP_SIZE = 5; // xiaowy 2021/05/12
 
   /**
    * Creates a new grip.
